@@ -23,6 +23,10 @@ MediaKeys::MediaKeys() {
     connection = nullptr;
 #elif defined(_WIN32) || defined(_WIN64)
     message_window = nullptr;
+#elif defined(__APPLE__)
+    event_tap = nullptr;
+    event_tap_source = nullptr;
+    run_loop = nullptr;
 #endif
 
     // Only start the worker thread if we're running in the actual game, not in the editor
@@ -47,6 +51,8 @@ MediaKeys::~MediaKeys() {
     if (message_window) {
         PostMessage(message_window, WM_QUIT, 0, 0);
     }
+#elif defined(__APPLE__)
+    cleanup_macos();
 #endif
 
     if (worker_thread.joinable()) {
@@ -163,7 +169,52 @@ static DBusHandlerResult mpris_message_handler(DBusConnection *connection, DBusM
 }
 
 
+#elif defined(_WIN32) || defined(_WIN64)
+// Windows message handler for media keys
+LRESULT CALLBACK MediaKeys::WindowProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
+    MediaKeys *self = nullptr;
+
+    if (message == WM_CREATE) {
+        CREATESTRUCT *pCreate = reinterpret_cast<CREATESTRUCT *>(lparam);
+        self = reinterpret_cast<MediaKeys *>(pCreate->lpCreateParams);
+        SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(self));
+    } else {
+        self = reinterpret_cast<MediaKeys *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+    }
+
+    if (message == WM_APPCOMMAND && self) {
+        short app_command = GET_APPCOMMAND_LPARAM(lparam);
+
+        MEDIA_KEYS_LOG(String("MediaKeys: Received WM_APPCOMMAND: ") + String::num_int64(app_command));
+
+        std::lock_guard<std::mutex> lock(self->queue_mutex);
+
+        switch (app_command) {
+            case APPCOMMAND_MEDIA_PLAY_PAUSE:
+                self->key_event_queue.push(MediaKeys::MEDIA_KEY_PLAY_PAUSE);
+                MEDIA_KEYS_LOG("MediaKeys: Queued PLAY_PAUSE");
+                return TRUE;
+            case APPCOMMAND_MEDIA_NEXTTRACK:
+                self->key_event_queue.push(MediaKeys::MEDIA_KEY_NEXT);
+                MEDIA_KEYS_LOG("MediaKeys: Queued NEXT");
+                return TRUE;
+            case APPCOMMAND_MEDIA_PREVIOUSTRACK:
+                self->key_event_queue.push(MediaKeys::MEDIA_KEY_PREVIOUS);
+                MEDIA_KEYS_LOG("MediaKeys: Queued PREVIOUS");
+                return TRUE;
+            case APPCOMMAND_MEDIA_STOP:
+                self->key_event_queue.push(MediaKeys::MEDIA_KEY_STOP);
+                MEDIA_KEYS_LOG("MediaKeys: Queued STOP");
+                return TRUE;
+        }
+    }
+
+    return DefWindowProc(hwnd, message, wparam, lparam);
+}
+#endif
+
 void MediaKeys::worker_thread_func() {
+#ifdef __linux__
     DBusError err;
     dbus_error_init(&err);
 
@@ -269,4 +320,63 @@ void MediaKeys::worker_thread_func() {
 
     // Cleanup: MPRIS name will be automatically released when connection is closed
     MEDIA_KEYS_LOG("MediaKeys: Worker thread exiting");
+
+#elif defined(_WIN32) || defined(_WIN64)
+    // Windows implementation using a message-only window
+    MEDIA_KEYS_LOG("MediaKeys: Starting Windows worker thread");
+
+    // Register window class
+    WNDCLASSEXW wc = {};
+    wc.cbSize = sizeof(WNDCLASSEXW);
+    wc.lpfnWndProc = WindowProc;
+    wc.hInstance = GetModuleHandle(nullptr);
+    wc.lpszClassName = L"GodotMediaKeysWindow";
+
+    if (!RegisterClassExW(&wc)) {
+        MEDIA_KEYS_LOG("MediaKeys: Failed to register window class");
+        return;
+    }
+
+    // Create a message-only window to receive WM_APPCOMMAND messages
+    message_window = CreateWindowExW(
+        0,
+        L"GodotMediaKeysWindow",
+        L"Godot Media Keys",
+        0,
+        0, 0, 0, 0,
+        HWND_MESSAGE,  // Message-only window
+        nullptr,
+        GetModuleHandle(nullptr),
+        this  // Pass 'this' pointer to WM_CREATE
+    );
+
+    if (!message_window) {
+        MEDIA_KEYS_LOG("MediaKeys: Failed to create message window");
+        UnregisterClassW(L"GodotMediaKeysWindow", GetModuleHandle(nullptr));
+        return;
+    }
+
+    MEDIA_KEYS_LOG("MediaKeys: Message window created successfully");
+    MEDIA_KEYS_LOG("MediaKeys: Listening for media key events...");
+
+    // Message loop
+    MSG msg;
+    while (running && GetMessage(&msg, nullptr, 0, 0)) {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+
+    // Cleanup
+    if (message_window) {
+        DestroyWindow(message_window);
+        message_window = nullptr;
+    }
+    UnregisterClassW(L"GodotMediaKeysWindow", GetModuleHandle(nullptr));
+
+    MEDIA_KEYS_LOG("MediaKeys: Worker thread exiting");
+
+#elif defined(__APPLE__)
+    // macOS implementation is in media_keys_macos.mm
+    worker_thread_func_macos();
+#endif
 }

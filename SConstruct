@@ -116,12 +116,18 @@ godot_cpp_lib = f"{lib_prefix}godot-cpp.{platform}.{target}.{arch}{lib_ext}"
 env.Append(LIBS=[File(os.path.join('godot-cpp', 'bin', godot_cpp_lib))])
 
 if is_windows:
-    env.Append(LIBS=['ws2_32', 'bcrypt'])
+    # ws2_32 and bcrypt are needed by godot-cpp
+    # user32 is needed for Windows message handling (CreateWindowEx, GetMessage, etc.)
+    env.Append(LIBS=['ws2_32', 'bcrypt', 'user32'])
 elif platform == 'linux':
     env.Append(LIBS=['pthread', 'dl', 'dbus-1'])
 elif platform == 'macos':
     env.Append(LIBS=['pthread'])
-    env.Append(FRAMEWORKS=['CoreFoundation', 'SystemConfiguration', 'Security'])
+    # CoreFoundation and CoreGraphics are needed for CGEventTap
+    # AppKit/Foundation are needed for NSEvent handling
+    # Carbon is needed for media key codes (NX_KEYTYPE_*)
+    # IOKit is needed for ev_keymap.h
+    env.Append(FRAMEWORKS=['CoreFoundation', 'CoreGraphics', 'AppKit', 'Carbon', 'IOKit', 'SystemConfiguration', 'Security'])
 
 
 # Debug logging for CI: print resolved names and compiler locations
@@ -142,6 +148,10 @@ src_files = [
     'src/register_types.cpp',
     'src/media_keys.cpp',
 ]
+
+# Add macOS-specific Objective-C++ file
+if platform == 'macos':
+    src_files.append('src/media_keys_macos.mm')
 
 env.Execute(Mkdir('addons/godot-media-keys/bin'))
 

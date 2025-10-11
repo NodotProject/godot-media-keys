@@ -12,6 +12,9 @@
 #include <dbus/dbus.h>
 #elif defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
+#elif defined(__APPLE__)
+#include <CoreFoundation/CoreFoundation.h>
+#include <CoreGraphics/CoreGraphics.h>
 #endif
 
 // Debug logging can be enabled by defining MEDIA_KEYS_DEBUG
@@ -47,6 +50,12 @@ private:
 #elif defined(_WIN32) || defined(_WIN64)
     HWND message_window;
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
+#elif defined(__APPLE__)
+    CFMachPortRef event_tap;
+    CFRunLoopSourceRef event_tap_source;
+    CFRunLoopRef run_loop;
+    void worker_thread_func_macos();
+    void cleanup_macos();
 #endif
 
     std::thread worker_thread;
