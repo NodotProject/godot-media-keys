@@ -1,0 +1,45 @@
+[gd_scene load_steps=2 format=3 uid="uid://d3vbjij1nq614"]
+
+[ext_resource type="Script" uid="uid://l0ei8hq4qq8p" path="res://example/test_scene.gd" id="1_test"]
+
+[node name="TestScene" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_test")
+
+[node name="Label" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -100.0
+offset_right = 200.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Press media keys (Play/Pause, Next, Previous, Stop)
+Events will appear below:"
+horizontal_alignment = 1
+
+[node name="EventLabel" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = 20.0
+offset_right = 200.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "No events yet"
+horizontal_alignment = 1

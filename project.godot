@@ -1,0 +1,25 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="godot-media-keys"
+config/description="A GDExtension to add a listener for media key presses"
+config/version="0.1.0"
+run/main_scene="uid://d3vbjij1nq614"
+config/features=PackedStringArray("4.5", "Forward Plus")
+
+[autoload]
+
+MediaKeysAutoload="*res://addons/godot-media-keys/media_keys_autoload.gd"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/gut/plugin.cfg", "res://addons/godot-media-keys/plugin.cfg")

@@ -1,0 +1,10 @@
+[configuration]
+
+entry_symbol = "media_keys_library_init"
+compatibility_minimum = "4.5"
+
+[libraries]
+
+linux.64 = "res://addons/godot-media-keys/bin/libmedia_keys.so"
+windows.64 = "res://addons/godot-media-keys/bin/libmedia_keys.dll"
+macos.64 = "res://addons/godot-media-keys/bin/libmedia_keys.dylib"
