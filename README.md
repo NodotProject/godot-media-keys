@@ -1,5 +1,9 @@
 # Godot Media Keys
 
+<p align="center">
+    <img width="512" height="512" alt="image" src="https://github.com/NodotProject/godot-media-keys/blob/main/logo.png?raw=true" />
+</p>
+
 A cross-platform GDExtension for capturing global media key presses (Play/Pause, Next, Previous, Stop) in Godot 4 projects.
 
 ## Features
