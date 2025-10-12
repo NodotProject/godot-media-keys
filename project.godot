@@ -15,6 +15,7 @@ config/description="A GDExtension to add a listener for media key presses"
 config/version="0.1.0"
 run/main_scene="uid://d3vbjij1nq614"
 config/features=PackedStringArray("4.5", "Forward Plus")
+config/icon="uid://bfef6iyste6no"
 
 [autoload]
 
