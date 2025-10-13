@@ -58,17 +58,11 @@ func test_signal_order_preservation():
 
 func test_concurrent_signal_handlers():
     # Test multiple signal handlers can be connected simultaneously
-    var handler1_count = 0
-    var handler2_count = 0
-    var handler3_count = 0
+    var handler_helper = ConcurrentHandlerHelper.new()
 
-    var handler1 = func(key): handler1_count += 1
-    var handler2 = func(key): handler2_count += 1
-    var handler3 = func(key): handler3_count += 1
-
-    media_keys.connect("media_key_pressed", handler1)
-    media_keys.connect("media_key_pressed", handler2)
-    media_keys.connect("media_key_pressed", handler3)
+    media_keys.connect("media_key_pressed", handler_helper.on_handler1)
+    media_keys.connect("media_key_pressed", handler_helper.on_handler2)
+    media_keys.connect("media_key_pressed", handler_helper.on_handler3)
 
     # Emit some signals
     for i in range(5):
@@ -78,14 +72,14 @@ func test_concurrent_signal_handlers():
     for i in range(3):
         await get_tree().process_frame
 
-    assert_eq(handler1_count, 5, "Handler 1 should receive all signals")
-    assert_eq(handler2_count, 5, "Handler 2 should receive all signals")
-    assert_eq(handler3_count, 5, "Handler 3 should receive all signals")
+    assert_eq(handler_helper.handler1_count, 5, "Handler 1 should receive all signals")
+    assert_eq(handler_helper.handler2_count, 5, "Handler 2 should receive all signals")
+    assert_eq(handler_helper.handler3_count, 5, "Handler 3 should receive all signals")
 
     # Cleanup
-    media_keys.disconnect("media_key_pressed", handler1)
-    media_keys.disconnect("media_key_pressed", handler2)
-    media_keys.disconnect("media_key_pressed", handler3)
+    media_keys.disconnect("media_key_pressed", handler_helper.on_handler1)
+    media_keys.disconnect("media_key_pressed", handler_helper.on_handler2)
+    media_keys.disconnect("media_key_pressed", handler_helper.on_handler3)
 
 func test_signal_emission_during_processing():
     # Test that emitting signals while processing doesn't cause deadlock
@@ -151,3 +145,19 @@ func _on_load_test_key_pressed(key: int):
     test_mutex.unlock()
     # Simulate some processing time
     await get_tree().create_timer(0.001).timeout
+
+# Helper class for concurrent signal handler test
+# Needed because lambda functions don't work properly with signal connections
+class ConcurrentHandlerHelper:
+    var handler1_count = 0
+    var handler2_count = 0
+    var handler3_count = 0
+
+    func on_handler1(key: int):
+        handler1_count += 1
+
+    func on_handler2(key: int):
+        handler2_count += 1
+
+    func on_handler3(key: int):
+        handler3_count += 1

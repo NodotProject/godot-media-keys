@@ -45,7 +45,10 @@ MediaKeys::~MediaKeys() {
 
 #ifdef __linux__
     if (connection) {
-        dbus_connection_close(connection);
+        // Use unref instead of close for shared connections
+        // See: https://dbus.freedesktop.org/doc/api/html/group__DBusConnection.html#ga80b7197b4af41a2c588dc173de1df948
+        dbus_connection_unref(connection);
+        connection = nullptr;
     }
 #elif defined(_WIN32) || defined(_WIN64)
     if (message_window) {
