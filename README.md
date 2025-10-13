@@ -4,6 +4,9 @@
     <img width="512" height="512" alt="image" src="https://github.com/NodotProject/godot-media-keys/blob/main/logo.png?raw=true" />
 </p>
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Discord](https://img.shields.io/discord/1089846386566111322)](https://discord.gg/Rx9CZX4sjG) [![Mastodon](https://img.shields.io/mastodon/follow/110106863700290562?domain=mastodon.gamedev.place)](https://mastodon.gamedev.place/@krazyjakee) [![Youtube](https://img.shields.io/youtube/channel/subscribers/UColWkNMgHseKyU7D1QGeoyQ)](https://www.youtube.com/@GodotNodot) [![GitHub Sponsors](https://img.shields.io/github/sponsors/krazyjakee)](https://github.com/sponsors/krazyjakee) [![GitHub Stars](https://img.shields.io/github/stars/NodotProject/godot-media-keys)](https://github.com/NodotProject/godot-media-keys)
+
 A cross-platform GDExtension for capturing global media key presses (Play/Pause, Next, Previous, Stop) in Godot 4 projects.
 
 ## Features
@@ -98,26 +101,6 @@ func _on_media_key_pressed(key: int):
 
 # The compiled libraries will be placed in:
 # addons/godot-media-keys/bin/
-```
-
-### Project Structure
-
-```
-godot-media-keys/
-├── addons/godot-media-keys/
-│   ├── bin/                        # Compiled libraries
-│   ├── media_keys_autoload.gd      # Autoload script for polling
-│   ├── media_keys_plugin.gd        # Plugin registration
-│   └── plugin.cfg                  # Plugin metadata
-├── src/
-│   ├── media_keys.h                # Main header
-│   ├── media_keys.cpp              # Cross-platform implementation
-│   ├── media_keys_macos.mm         # macOS-specific code (Objective-C++)
-│   └── register_types.cpp          # GDExtension registration
-├── example/                        # Example scene
-├── test/                           # Unit tests
-├── SConstruct                      # Build configuration
-└── build_local.sh                  # Build script
 ```
 
 ## Testing
