@@ -156,8 +156,9 @@ if platform == 'macos':
 env.Execute(Mkdir('addons/godot-media-keys/bin'))
 
 # Set the correct library suffix and prefix based on platform
+# Note: We use 'lib' prefix for all platforms to match the .gdextension file
 if is_windows:
-    env['SHLIBPREFIX'] = ''
+    env['SHLIBPREFIX'] = 'lib'
     env['SHLIBSUFFIX'] = '.dll'
 elif platform == 'macos':
     env['SHLIBPREFIX'] = 'lib'
