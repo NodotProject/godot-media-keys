@@ -172,5 +172,9 @@ print("SHLIBSUFFIX:", env.get('SHLIBSUFFIX'))
 print("Target shared lib will be created as:", env.get('SHLIBPREFIX') + 'media_keys' + env.get('SHLIBSUFFIX'))
 
 # Create the library directly in the addon directory
-library = env.SharedLibrary(target='addons/godot-media-keys/bin/media_keys', source=src_files)
+# For macOS, when building with a specific architecture (not universal), include arch in filename
+if platform == 'macos' and arch != 'universal':
+    library = env.SharedLibrary(target=f'addons/godot-media-keys/bin/media_keys.{arch}', source=src_files)
+else:
+    library = env.SharedLibrary(target='addons/godot-media-keys/bin/media_keys', source=src_files)
 Default(library)
