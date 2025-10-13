@@ -46,9 +46,9 @@ jobs:
             godot-cpp/bin/
             godot-cpp/gen/
             godot-cpp/.sconsign.dblite
-          key: ${{ runner.os }}-godot-cpp-${{ hashFiles('godot-cpp/**') }}
+          key: linux-x86_64-godot-cpp-${{ hashFiles('godot-cpp/**') }}
           restore-keys: |
-            ${{ runner.os }}-godot-cpp-
+            linux-x86_64-godot-cpp-
 
       - name: Build godot-cpp
         if: steps.cache-godot-cpp.outputs.cache-hit != 'true'
@@ -96,9 +96,9 @@ jobs:
             godot-cpp/bin/
             godot-cpp/gen/
             godot-cpp/.sconsign.dblite
-          key: windows-godot-cpp-${{ hashFiles('godot-cpp/**') }}
+          key: windows-x86_64-godot-cpp-${{ hashFiles('godot-cpp/**') }}
           restore-keys: |
-            windows-godot-cpp-
+            windows-x86_64-godot-cpp-
 
       - name: Build godot-cpp
         if: steps.cache-godot-cpp.outputs.cache-hit != 'true'
@@ -139,37 +139,27 @@ jobs:
         run: |
           brew install scons
 
-      - name: Setup godot-cpp cache (x86_64)
-        id: cache-godot-cpp-x86_64
+      - name: Setup godot-cpp cache
+        id: cache-godot-cpp
         uses: actions/cache@v4
         with:
           path: |
-            godot-cpp/bin/*x86_64*
+            godot-cpp/bin/
             godot-cpp/gen/
             godot-cpp/.sconsign.dblite
-          key: macos-x86_64-godot-cpp-${{ hashFiles('godot-cpp/**') }}
+          key: macos-universal-godot-cpp-${{ hashFiles('godot-cpp/**') }}
           restore-keys: |
-            macos-x86_64-godot-cpp-
-
-      - name: Setup godot-cpp cache (arm64)
-        id: cache-godot-cpp-arm64
-        uses: actions/cache@v4
-        with:
-          path: |
-            godot-cpp/bin/*arm64*
-          key: macos-arm64-godot-cpp-${{ hashFiles('godot-cpp/**') }}
-          restore-keys: |
-            macos-arm64-godot-cpp-
+            macos-universal-godot-cpp-
 
       - name: Build godot-cpp (x86_64)
-        if: steps.cache-godot-cpp-x86_64.outputs.cache-hit != 'true'
+        if: steps.cache-godot-cpp.outputs.cache-hit != 'true'
         run: |
           cd godot-cpp
           scons platform=macos target=template_release arch=x86_64 generate_bindings=yes -j$(sysctl -n hw.logicalcpu)
           cd ..
 
       - name: Build godot-cpp (arm64)
-        if: steps.cache-godot-cpp-arm64.outputs.cache-hit != 'true'
+        if: steps.cache-godot-cpp.outputs.cache-hit != 'true'
         run: |
           cd godot-cpp
           scons platform=macos target=template_release arch=arm64 generate_bindings=yes -j$(sysctl -n hw.logicalcpu)
@@ -231,12 +221,12 @@ jobs:
         run: |
           cp addons/godot-media-keys/media_keys.gdextension package/addons/godot-media-keys/
           cp addons/godot-media-keys/plugin.cfg package/addons/godot-media-keys/
-          cp addons/godot-media-keys/*.gd package/addons/godot-media-keys/
+          cp addons/godot-media-keys/*.gd package/addons/godot-media-keys/ 2>/dev/null || true
 
       - name: Copy README and LICENSE
         run: |
           cp README.md package/addons/godot-media-keys/
-          cp LICENSE package/addons/godot-media-keys/ || echo "LICENSE file not found"
+          cp LICENSE package/addons/godot-media-keys/ 2>/dev/null || echo "LICENSE file not found"
 
       - name: Generate SHA256 checksums
         run: |

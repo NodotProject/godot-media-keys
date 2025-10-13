@@ -42,6 +42,13 @@ public:
     std::queue<MediaKey> key_event_queue;
     std::mutex queue_mutex;
 
+#ifdef __APPLE__
+    // These need to be public for the C callback function to access them
+    CFMachPortRef event_tap;
+    CFRunLoopSourceRef event_tap_source;
+    CFRunLoopRef run_loop;
+#endif
+
 private:
     static MediaKeys *singleton;
 
@@ -51,9 +58,6 @@ private:
     HWND message_window;
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
 #elif defined(__APPLE__)
-    CFMachPortRef event_tap;
-    CFRunLoopSourceRef event_tap_source;
-    CFRunLoopRef run_loop;
     void worker_thread_func_macos();
     void cleanup_macos();
 #endif

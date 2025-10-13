@@ -13,10 +13,10 @@ env:
   SCONS_CACHE_LIMIT: 7168
 
 jobs:
-  # Build for Linux
-  build-linux:
+  # Test build on Linux only
+  test-linux:
     runs-on: ubuntu-latest
-    name: Build Linux (x86_64)
+    name: Test Build (Linux x86_64)
 
     steps:
       - name: Checkout repository
@@ -57,140 +57,14 @@ jobs:
         run: |
           scons platform=linux target=template_release -j$(nproc)
 
+      - name: Verify build output
+        run: |
+          ls -lh addons/godot-media-keys/bin/
+          file addons/godot-media-keys/bin/libmedia_keys.so
+
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
         with:
           name: libmedia_keys-linux-x86_64
           path: addons/godot-media-keys/bin/libmedia_keys.so
-          retention-days: 7
-
-  # Build for Windows
-  build-windows:
-    runs-on: ubuntu-latest
-    name: Build Windows (x86_64)
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential scons pkg-config mingw-w64
-
-      - name: Setup godot-cpp cache
-        id: cache-godot-cpp
-        uses: actions/cache@v4
-        with:
-          path: |
-            godot-cpp/bin/
-            godot-cpp/gen/
-            godot-cpp/.sconsign.dblite
-          key: windows-godot-cpp-${{ hashFiles('godot-cpp/**') }}
-          restore-keys: |
-            windows-godot-cpp-
-
-      - name: Build godot-cpp
-        if: steps.cache-godot-cpp.outputs.cache-hit != 'true'
-        run: |
-          cd godot-cpp
-          scons platform=windows target=template_release generate_bindings=yes use_mingw=yes -j$(nproc)
-          cd ..
-
-      - name: Build GDExtension
-        run: |
-          export CC=x86_64-w64-mingw32-gcc
-          export CXX=x86_64-w64-mingw32-g++
-          scons platform=windows target=template_release use_mingw=yes -j$(nproc)
-
-      - name: Upload Windows artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: libmedia_keys-windows-x86_64
-          path: addons/godot-media-keys/bin/libmedia_keys.dll
-          retention-days: 7
-
-  # Build for macOS
-  build-macos:
-    runs-on: macos-latest
-    name: Build macOS (Universal)
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-
-      - name: Install dependencies
-        run: |
-          brew install scons
-
-      - name: Setup godot-cpp cache (x86_64)
-        id: cache-godot-cpp-x86_64
-        uses: actions/cache@v4
-        with:
-          path: |
-            godot-cpp/bin/*x86_64*
-            godot-cpp/gen/
-            godot-cpp/.sconsign.dblite
-          key: macos-x86_64-godot-cpp-${{ hashFiles('godot-cpp/**') }}
-          restore-keys: |
-            macos-x86_64-godot-cpp-
-
-      - name: Setup godot-cpp cache (arm64)
-        id: cache-godot-cpp-arm64
-        uses: actions/cache@v4
-        with:
-          path: |
-            godot-cpp/bin/*arm64*
-          key: macos-arm64-godot-cpp-${{ hashFiles('godot-cpp/**') }}
-          restore-keys: |
-            macos-arm64-godot-cpp-
-
-      - name: Build godot-cpp (x86_64)
-        if: steps.cache-godot-cpp-x86_64.outputs.cache-hit != 'true'
-        run: |
-          cd godot-cpp
-          scons platform=macos target=template_release arch=x86_64 generate_bindings=yes -j$(sysctl -n hw.logicalcpu)
-          cd ..
-
-      - name: Build godot-cpp (arm64)
-        if: steps.cache-godot-cpp-arm64.outputs.cache-hit != 'true'
-        run: |
-          cd godot-cpp
-          scons platform=macos target=template_release arch=arm64 generate_bindings=yes -j$(sysctl -n hw.logicalcpu)
-          cd ..
-
-      - name: Build GDExtension (x86_64)
-        run: |
-          scons platform=macos target=template_release arch=x86_64 -j$(sysctl -n hw.logicalcpu)
-
-      - name: Build GDExtension (arm64)
-        run: |
-          scons platform=macos target=template_release arch=arm64 -j$(sysctl -n hw.logicalcpu)
-
-      - name: Create universal binary
-        run: |
-          lipo -create \
-            addons/godot-media-keys/bin/libmedia_keys.x86_64.dylib \
-            addons/godot-media-keys/bin/libmedia_keys.arm64.dylib \
-            -output addons/godot-media-keys/bin/libmedia_keys.dylib
-
-      - name: Upload macOS artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: libmedia_keys-macos-universal
-          path: addons/godot-media-keys/bin/libmedia_keys.dylib
           retention-days: 7
