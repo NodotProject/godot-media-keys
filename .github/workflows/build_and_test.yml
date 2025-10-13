@@ -13,10 +13,10 @@ env:
   SCONS_CACHE_LIMIT: 7168
 
 jobs:
-  # Test build on Linux only
-  test-linux:
+  # Build and test on Linux only
+  build-and-test-linux:
     runs-on: ubuntu-latest
-    name: Test Build (Linux x86_64)
+    name: Build and Test (Linux x86_64)
 
     steps:
       - name: Checkout repository
@@ -32,7 +32,10 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential scons pkg-config libdbus-1-dev
+          sudo apt-get install -y build-essential scons pkg-config libdbus-1-dev \
+            libx11-dev libxcursor-dev libxinerama-dev libgl1-mesa-dev \
+            libglu1-mesa-dev libasound2-dev libpulse-dev libudev-dev \
+            libxi-dev libxrandr-dev
 
       - name: Setup godot-cpp cache
         id: cache-godot-cpp
@@ -61,6 +64,37 @@ jobs:
         run: |
           ls -lh addons/godot-media-keys/bin/
           file addons/godot-media-keys/bin/libmedia_keys.so
+
+      - name: Install Godot
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: ${{ env.GODOT_VERSION_FULL }}
+          use-dotnet: false
+          include-templates: false
+
+      - name: Install GUT
+        run: |
+          git clone https://github.com/bitwes/Gut.git gut_temp
+          mv gut_temp/addons/gut addons/
+          rm -rf gut_temp
+
+      - name: Import project
+        run: |
+          timeout 60 godot --headless --import --quit || true
+
+      - name: Run GUT tests
+        run: |
+          godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://test/unit -gexit
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            .gut/
+            *.log
+          retention-days: 7
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
