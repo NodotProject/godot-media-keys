@@ -42,10 +42,11 @@ else:
     # Use the default compiler on other platforms
     env = Environment()
 
-# Optional: enable SCons cache if SCONS_CACHE_DIR is provided (local or CI)
-cache_dir = os.environ.get('SCONS_CACHE_DIR')
+# Optional: enable SCons cache if SCONS_CACHE or SCONS_CACHE_DIR is provided (local or CI)
+cache_dir = os.environ.get('SCONS_CACHE') or os.environ.get('SCONS_CACHE_DIR')
 if cache_dir:
     CacheDir(cache_dir)
+    print(f"SCons cache enabled at: {cache_dir}")
 
 # Add include paths for godot-cpp
 env.Append(CPPPATH=[
@@ -112,7 +113,28 @@ else:
     lib_prefix = 'lib'
 
 # Add godot-cpp library
-godot_cpp_lib = f"{lib_prefix}godot-cpp.{platform}.{target}.{arch}{lib_ext}"
+# For macOS, try arch-specific first, then fall back to universal
+if platform == 'macos' and arch != 'universal':
+    arch_specific = f"{lib_prefix}godot-cpp.{platform}.{target}.{arch}{lib_ext}"
+    universal = f"{lib_prefix}godot-cpp.{platform}.{target}.universal{lib_ext}"
+
+    arch_specific_path = os.path.join('godot-cpp', 'bin', arch_specific)
+    universal_path = os.path.join('godot-cpp', 'bin', universal)
+
+    if os.path.exists(arch_specific_path):
+        godot_cpp_lib = arch_specific
+        print(f"Using arch-specific godot-cpp library: {arch_specific}")
+    elif os.path.exists(universal_path):
+        godot_cpp_lib = universal
+        print(f"Using universal godot-cpp library: {universal}")
+    else:
+        print(f"ERROR: No suitable godot-cpp library found!")
+        print(f"Tried: {arch_specific_path}")
+        print(f"Tried: {universal_path}")
+        Exit(1)
+else:
+    godot_cpp_lib = f"{lib_prefix}godot-cpp.{platform}.{target}.{arch}{lib_ext}"
+
 env.Append(LIBS=[File(os.path.join('godot-cpp', 'bin', godot_cpp_lib))])
 
 if is_windows:
