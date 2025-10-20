@@ -90,6 +90,12 @@ else:
     env.Append(CCFLAGS=['-fPIC'])
     env.Append(CXXFLAGS=['-std=c++17'])
 
+    # macOS: Add architecture flags for cross-compilation
+    if platform == 'macos' and arch != 'universal':
+        # Split -arch and the architecture value into separate list items
+        env.Append(CCFLAGS=['-arch', arch])
+        env.Append(LINKFLAGS=['-arch', arch])
+
 if is_windows and use_mingw:
     # Add Windows-specific defines for MinGW
     env.Append(CPPDEFINES=['WIN32', '_WIN32', 'WINDOWS_ENABLED'])
