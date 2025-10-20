@@ -103,11 +103,11 @@ if is_windows and use_mingw:
 # Uncomment the line below to enable debug logging:
 # env.Append(CPPDEFINES=['MEDIA_KEYS_DEBUG'])
 
-# When using MinGW for cross-compilation, we still get .a files with lib prefix
-# .lib files without prefix are only used with MSVC
+# When using MinGW for cross-compilation, we get .a files with lib prefix
+# godot-cpp-builds (NodotProject action) uses lib prefix even for MSVC
 if is_windows and not use_mingw:
     lib_ext = '.lib'
-    lib_prefix = ''
+    lib_prefix = 'lib'  # godot-cpp-builds uses lib prefix even for MSVC
 else:
     lib_ext = '.a'
     lib_prefix = 'lib'
@@ -140,7 +140,8 @@ env.Append(LIBS=[File(os.path.join('godot-cpp', 'bin', godot_cpp_lib))])
 if is_windows:
     # ws2_32 and bcrypt are needed by godot-cpp
     # user32 is needed for Windows message handling (CreateWindowEx, GetMessage, etc.)
-    env.Append(LIBS=['ws2_32', 'bcrypt', 'user32'])
+    # pthread is needed by godot-cpp (winpthreads for MinGW)
+    env.Append(LIBS=['ws2_32', 'bcrypt', 'user32', 'pthread'])
 elif platform == 'linux':
     env.Append(LIBS=['pthread', 'dl', 'dbus-1'])
 elif platform == 'macos':
@@ -178,7 +179,6 @@ if platform == 'macos':
 env.Execute(Mkdir('addons/godot-media-keys/bin'))
 
 # Set the correct library suffix and prefix based on platform
-# Note: We use 'lib' prefix for all platforms to match the .gdextension file
 if is_windows:
     env['SHLIBPREFIX'] = 'lib'
     env['SHLIBSUFFIX'] = '.dll'
@@ -195,9 +195,17 @@ print("SHLIBSUFFIX:", env.get('SHLIBSUFFIX'))
 print("Target shared lib will be created as:", env.get('SHLIBPREFIX') + 'media_keys' + env.get('SHLIBSUFFIX'))
 
 # Create the library directly in the addon directory
-# For macOS, when building with a specific architecture (not universal), include arch in filename
+# For macOS with specific arch, include arch in the filename (not for universal)
+# NOTE: SCons adds SHLIBPREFIX (lib) and SHLIBSUFFIX (.dylib/.so/.dll) automatically
+# BUT: If the target contains a dot, SCons treats everything after the last dot as an extension
+# So we must override SHLIBSUFFIX to include the arch to work around this issue
 if platform == 'macos' and arch != 'universal':
-    library = env.SharedLibrary(target=f'addons/godot-media-keys/bin/media_keys.{arch}', source=src_files)
+    # For arch-specific builds, we want: libmedia_keys.{arch}.dylib
+    # We override SHLIBSUFFIX to include the arch to work around SCons' extension detection
+    env['SHLIBSUFFIX'] = f'.{arch}.dylib'
+    library_target = 'addons/godot-media-keys/bin/media_keys'
 else:
-    library = env.SharedLibrary(target='addons/godot-media-keys/bin/media_keys', source=src_files)
+    library_target = 'addons/godot-media-keys/bin/media_keys'
+
+library = env.SharedLibrary(target=library_target, source=src_files)
 Default(library)
